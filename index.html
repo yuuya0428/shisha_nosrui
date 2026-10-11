@@ -26,7 +26,7 @@
 <div class="modal" id="moveModal"><div class="dialog"><h2 id="moveTitle">入荷を記録</h2><form id="moveForm"><input type="hidden" id="moveId"><div class="field"><label id="moveLabel">入荷数</label><input id="moveAmount" type="number" min="0.01" step="any" required placeholder="数量を入力"></div><div class="field"><label>メモ（任意）</label><input id="moveNote" placeholder="例：新規入荷"></div><div class="formbuttons"><button type="button" class="secondary" onclick="closeMove()">キャンセル</button><button type="submit">記録する</button></div></form></div></div>
 <div class="toast" id="toast"></div>
 <script>
-const brandOrder=['アルファーヘル','アフザル','ドザジ','アルファハマ','リラ','ゴールデンラヤリナ','その他','SS &トライエフェクタ&スターバズ','フルタス&ダークサイド'];
+const brandOrder=['アルファーヘル','アフザル','ドザジ','アルファハマ','リラ','ゴールデンラヤリナ','その他'];
 const brandRank=b=>{const i=managedBrands.indexOf((b||'').trim());return i<0?managedBrands.length:i};
 let managedBrands=[...brandOrder];
 let deletedBrands=[];
@@ -42,11 +42,17 @@ if(brandSchemaVersion<2){
  flavors.forEach(f=>{if(Object.prototype.hasOwnProperty.call(baselineBrandMigration,f.id))f.brand=baselineBrandMigration[f.id]});
  brandSchemaVersion=2;
 }
+if(brandSchemaVersion<3){
+ flavors.forEach(f=>{if(f.brand==='フルタス&ダークサイド'||f.brand==='SS &トライエフェクタ&スターバズ'||f.brand==='SS &トライエフェクタ&スターバズ')f.brand='その他'});
+ managedBrands=managedBrands.filter(b=>b!=='フルタス&ダークサイド'&&b!=='SS &トライエフェクタ&スターバズ');
+ deletedBrands=[...new Set([...deletedBrands,'フルタス&ダークサイド','SS &トライエフェクタ&スターバズ'])];
+ brandSchemaVersion=3;
+}
 managedBrands=[...new Set([...managedBrands,...brandOrder,...flavors.map(f=>f.brand).filter(Boolean)])].filter(b=>!deletedBrands.includes(b));
 function normalizeFlavorNameForBrand(brand,name){let n=String(name||'').trim();if(String(brand||'').includes('フルタス'))return n.startsWith('(ノンニコ)')?n:'(ノンニコ)'+(n?' ':'')+n;return n.replace(/^\(ノンニコ\)\s*/,'')}
 
 const $=id=>document.getElementById(id);
-function save(){localStorage.setItem('shishaInventory_v1',JSON.stringify({flavors,history,brands:managedBrands,deletedBrands,brandSchemaVersion:2}));}
+function save(){localStorage.setItem('shishaInventory_v1',JSON.stringify({flavors,history,brands:managedBrands,deletedBrands,brandSchemaVersion:3}));}
 let normalizedExistingFlavors=false;flavors.forEach(f=>{const name=normalizeFlavorNameForBrand(f.brand,f.name);if(name!==f.name){f.name=name;normalizedExistingFlavors=true}});if(normalizedExistingFlavors)save();
 function fmt(n){return Number(n||0).toLocaleString('ja-JP',{maximumFractionDigits:2})}
 function remaining(f){return Math.max(0,Number(f.stock||0)-Number(f.consumed||0))}
