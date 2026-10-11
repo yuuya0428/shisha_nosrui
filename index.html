@@ -43,9 +43,11 @@ if(brandSchemaVersion<2){
  brandSchemaVersion=2;
 }
 managedBrands=[...new Set([...managedBrands,...brandOrder,...flavors.map(f=>f.brand).filter(Boolean)])].filter(b=>!deletedBrands.includes(b));
+function normalizeFlavorNameForBrand(brand,name){let n=String(name||'').trim();if(String(brand||'').includes('フルタス'))return n.startsWith('(ノンニコ)')?n:'(ノンニコ)'+(n?' ':'')+n;return n.replace(/^\(ノンニコ\)\s*/,'')}
 
 const $=id=>document.getElementById(id);
 function save(){localStorage.setItem('shishaInventory_v1',JSON.stringify({flavors,history,brands:managedBrands,deletedBrands,brandSchemaVersion:2}));}
+let normalizedExistingFlavors=false;flavors.forEach(f=>{const name=normalizeFlavorNameForBrand(f.brand,f.name);if(name!==f.name){f.name=name;normalizedExistingFlavors=true}});if(normalizedExistingFlavors)save();
 function fmt(n){return Number(n||0).toLocaleString('ja-JP',{maximumFractionDigits:2})}
 function remaining(f){return Math.max(0,Number(f.stock||0)-Number(f.consumed||0))}
 function rate(f){return Number(f.stock)>0?Math.min(100,Number(f.consumed||0)/Number(f.stock)*100):0}
@@ -101,7 +103,7 @@ function render(){
 function openFlavor(){ $('flavorForm').reset();$('editId').value='';$('stock').value=0;$('consumed').value=0;$('modalTitle').textContent='フレーバー追加';$('modal').classList.add('open')}
 function closeModal(){$('modal').classList.remove('open')}
 function editFlavor(id){let f=flavors.find(x=>x.id===id);if(!f)return;$('editId').value=id;$('brand').value=f.brand;$('name').value=f.name;$('stock').value=f.stock;$('consumed').value=f.consumed;$('expiry').value=f.expiry||'';$('modalTitle').textContent='フレーバー編集';$('modal').classList.add('open')}
-$('flavorForm').addEventListener('submit',e=>{e.preventDefault();let id=$('editId').value,rec={brand:$('brand').value.trim(),name:$('name').value.trim(),stock:Number($('stock').value),consumed:Number($('consumed').value),expiry:$('expiry').value.trim()};if(rec.consumed>rec.stock){toast('消費数が総在庫を超えています');return}if(id){Object.assign(flavors.find(f=>f.id===id),rec)}else{rec.id='f'+Date.now();flavors.push(rec);history.unshift({date:new Date().toLocaleString('ja-JP'),name:rec.name,type:'登録',amount:0,note:'フレーバーを登録'})}save();closeModal();refreshBrands();render();toast('保存しました')});
+$('flavorForm').addEventListener('submit',e=>{e.preventDefault();let id=$('editId').value,rec={brand:$('brand').value.trim(),name:normalizeFlavorNameForBrand($('brand').value.trim(),$('name').value),stock:Number($('stock').value),consumed:Number($('consumed').value),expiry:$('expiry').value.trim()};if(rec.consumed>rec.stock){toast('消費数が総在庫を超えています');return}if(id){Object.assign(flavors.find(f=>f.id===id),rec)}else{rec.id='f'+Date.now();flavors.push(rec);history.unshift({date:new Date().toLocaleString('ja-JP'),name:rec.name,type:'登録',amount:0,note:'フレーバーを登録'})}save();closeModal();refreshBrands();render();toast('保存しました')});
 function deleteFlavor(id){let f=flavors.find(x=>x.id===id);if(f&&confirm(`「${f.name}」を削除しますか？\nこの操作は取り消せません。`)){flavors=flavors.filter(x=>x.id!==id);save();refreshBrands();render();toast('削除しました')}}
 function openMove(id,type){let f=flavors.find(x=>x.id===id);if(!f)return;$('moveId').value=id;$('moveAmount').value='';$('moveNote').value='';$('moveTitle').textContent=type==='in'?'入荷を記録：'+f.name:'消費を記録：'+f.name;$('moveLabel').textContent=type==='in'?'入荷数':'消費数';$('moveForm').dataset.type=type;$('moveModal').classList.add('open')}
 function closeMove(){$('moveModal').classList.remove('open')}
