@@ -1,0 +1,19 @@
+{
+  "name": "煙庫 | シーシャフレーバー在庫",
+  "short_name": "煙庫",
+  "description": "シーシャフレーバーの在庫管理",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f5f0",
+  "theme_color": "#172d27",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
